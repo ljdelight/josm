@@ -311,6 +311,15 @@ public class FilterTableModel extends AbstractTableModel implements SortableTabl
         return model.getFilters();
     }
 
+    /**
+     * Determines if at least one OSM primitive is disabled or hidden due to filtering.
+     * @return {@code true} if at least one primitive is disabled or hidden
+     * @since xxx
+     */
+    public boolean hasDisabledOrHiddenPrimitives() {
+        return model.getDisabledAndHiddenCount() > 0 || model.getDisabledCount() > 0;
+    }
+
     @Override
     public void sort() {
         model.sort();

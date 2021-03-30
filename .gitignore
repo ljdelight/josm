@@ -1,0 +1,12 @@
+.idea/
+build/
+build2/
+dist/
+*.iml
+resources/CONTRIBUTION
+resources/LICENSE
+resources/README
+resources/REVISION
+resources/data/projection/
+src/org/openstreetmap/josm/gui/mappaint/mapcss/parsergen/
+tools/ivy/

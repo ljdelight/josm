@@ -11,9 +11,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 
 import org.openstreetmap.josm.data.preferences.sources.ValidatorPrefHelper;
 import org.openstreetmap.josm.data.validation.OsmValidator;
@@ -49,6 +51,7 @@ public class ValidatorTestsPreference implements SubPreferenceSetting {
     private JCheckBox prefUseLayer;
     private JCheckBox prefOtherUpload;
     private JCheckBox prefOther;
+    private ButtonGroup validateWithFiltersGroup;
 
     /** The list of all tests */
     private Collection<Test> allTests;
@@ -92,6 +95,36 @@ public class ValidatorTestsPreference implements SubPreferenceSetting {
         gui.getValidatorPreference().addSubTab(this, tr("Tests"),
                 GuiHelper.embedInVerticalScrollPane(testPanel),
                 tr("Choose tests to enable"));
+
+        JRadioButton validateWithFiltersAsk = new JRadioButton(tr("Ask to continue with validation"));
+        validateWithFiltersAsk.setActionCommand("ask");
+        JRadioButton validateWithFiltersContinue = new JRadioButton(tr("Continue with validation"));
+        validateWithFiltersContinue.setActionCommand("continue");
+        JRadioButton validateWithFiltersFail = new JRadioButton(tr("Show an error message"));
+        validateWithFiltersFail.setActionCommand("fail");
+
+        switch(ValidatorPrefHelper.PREF_VALIDATE_WITH_FILTERS_ENABLED_ACTION.get()) {
+            case "ask":
+                validateWithFiltersAsk.setSelected(true);
+                break;
+            case "continue":
+                validateWithFiltersContinue.setSelected(true);
+                break;
+            case "fail":
+                validateWithFiltersFail.setSelected(true);
+                break;
+        }
+
+        validateWithFiltersGroup = new ButtonGroup();
+        validateWithFiltersGroup.add(validateWithFiltersAsk);
+        validateWithFiltersGroup.add(validateWithFiltersContinue);
+        validateWithFiltersGroup.add(validateWithFiltersFail);
+
+        JLabel validateWithFiltersLabel = new JLabel(tr("When validation is performed with filters enabled:"));
+        testPanel.add(validateWithFiltersLabel, GBC.eol());
+        testPanel.add(validateWithFiltersAsk, GBC.eol().insets(40, 0, 0, 0));
+        testPanel.add(validateWithFiltersContinue, GBC.eol().insets(40, 0, 0, 0));
+        testPanel.add(validateWithFiltersFail, GBC.eol().insets(40, 0, 0, 0));
     }
 
     @Override
@@ -121,6 +154,7 @@ public class ValidatorTestsPreference implements SubPreferenceSetting {
         ValidatorPrefHelper.PREF_OTHER.put(prefOther.isSelected());
         ValidatorPrefHelper.PREF_OTHER_UPLOAD.put(prefOtherUpload.isSelected());
         ValidatorPrefHelper.PREF_LAYER.put(prefUseLayer.isSelected());
+        ValidatorPrefHelper.PREF_VALIDATE_WITH_FILTERS_ENABLED_ACTION.put(validateWithFiltersGroup.getSelection().getActionCommand());
         return false;
     }
 

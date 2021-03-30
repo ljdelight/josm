@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
+import org.openstreetmap.josm.data.preferences.StringProperty;
 import org.openstreetmap.josm.data.validation.tests.MapCSSTagChecker;
 import org.openstreetmap.josm.tools.ImageProvider;
 
@@ -55,6 +56,13 @@ public class ValidatorPrefHelper extends SourcePrefHelper {
      * of the displayed errors in the tree regarding the current selection
      */
     public static final String PREF_FILTER_BY_SELECTION = PREFIX + ".selectionFilter";
+
+    /**
+     * The preferences for showing a warning if validation action is performed with filters enabled
+     * @since xxx
+     * */
+    public static final StringProperty PREF_VALIDATE_WITH_FILTERS_ENABLED_ACTION =
+            new StringProperty(PREFIX + ".validate_with_filters_action", "ask");
 
     /**
      * Constructs a new {@code PresetPrefHelper}.
