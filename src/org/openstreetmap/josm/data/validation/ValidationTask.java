@@ -1,6 +1,7 @@
 // License: GPL. For details, see LICENSE file.
 package org.openstreetmap.josm.data.validation;
 
+import org.openstreetmap.josm.actions.ValidateAction;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.preferences.sources.ValidatorPrefHelper;
 import org.openstreetmap.josm.gui.MainApplication;
@@ -99,6 +100,13 @@ public class ValidationTask extends PleaseWaitRunnable {
             for (TestError error : errors) {
                 if (canceled) return;
                 error.updateIgnored();
+            }
+        }
+
+        for (TestError error : errors) {
+            if (error.getPrimitives().stream().anyMatch(it -> !it.isDrawable())) {
+                GuiHelper.runInEDT(ValidateAction::showDialog);
+                break;
             }
         }
     }

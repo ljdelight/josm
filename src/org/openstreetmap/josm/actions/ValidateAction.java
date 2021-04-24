@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -142,6 +143,29 @@ public class ValidateAction extends JosmAction {
         doValidate(true);
     }
 
+    public static void showDialog() {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.add(new JLabel("<html><body style=\"width: 375px;\">" +
+                tr("The validation resulted in a layer with items hidden by a filter.") + "<br/><br/>" +
+                tr("Please review the active filters to see the results.") +
+                "</body></html>"), GBC.eol());
+        JCheckBox rememberChoice = new JCheckBox(tr("Do not show this again (remembers choice)"));
+        p.add(rememberChoice, GBC.eol().insets(30, 10, 0, 0));
+
+        ExtendedDialog ed = new ExtendedDialog(MainApplication.getMainFrame(),
+                tr("Validation Has Hidden Results"),
+                tr("Continue"))
+                .setContent(p);
+
+        ed.setButtonIcons("ok");
+
+        int result = ed.showDialog().getValue();
+
+        if (result != -1 && rememberChoice.isSelected()) {
+            // Update the persistent preference based on the user's selection
+//            ValidatorPrefHelper.PREF_VALIDATE_WITH_FILTERS_ENABLED_ACTION.put(validateWithFiltersGroup.getSelection().getActionCommand());
+        }
+    }
     /**
      * Does the validation.
      * <p>
