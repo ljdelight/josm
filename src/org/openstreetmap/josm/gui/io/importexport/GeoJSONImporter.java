@@ -18,6 +18,7 @@ import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.gui.progress.NullProgressMonitor;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
+import org.openstreetmap.josm.gui.colocation.ColocatedNodesResolver;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.io.CachedFile;
 import org.openstreetmap.josm.io.Compression;
@@ -51,7 +52,9 @@ public class GeoJSONImporter extends FileImporter {
         progressMonitor.setTicksCount(2);
         Logging.info("Parsing GeoJSON: {0}", file.getAbsolutePath());
         try (InputStream fileInputStream = Compression.getUncompressedFileInputStream(file)) {
-            DataSet data = GeoJSONReader.parseDataSet(fileInputStream, progressMonitor);
+            ColocatedNodesResolver resolver = new ColocatedNodesResolver(
+                    ColocatedNodesResolver.RESOLVE_KEEP_ONE, ColocatedNodesResolver.APPLY_PROMPT);
+            DataSet data = GeoJSONReader.parseDataSet(fileInputStream, progressMonitor, resolver);
             progressMonitor.worked(1);
             MainApplication.getLayerManager().addLayer(new OsmDataLayer(data, file.getName(), file));
         } catch (IOException | IllegalArgumentException | IllegalDataException | JsonException e) {

@@ -44,6 +44,7 @@ import org.openstreetmap.josm.data.validation.TestError;
 import org.openstreetmap.josm.data.validation.tests.DuplicateWay;
 import org.openstreetmap.josm.gui.progress.NullProgressMonitor;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
+import org.openstreetmap.josm.gui.colocation.ColocatedNodesResolver;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Utils;
@@ -65,9 +66,15 @@ public class GeoJSONReader extends AbstractReader {
     /** The record separator is 0x1E per RFC 7464 */
     private static final byte RECORD_SEPARATOR_BYTE = 0x1E;
     private Projection projection = Projections.getProjectionByCode("EPSG:4326"); // WGS 84
+    private final ColocatedNodesResolver resolver;
 
     GeoJSONReader() {
         // Restricts visibility
+        this.resolver = new ColocatedNodesResolver();
+    }
+
+    GeoJSONReader(final ColocatedNodesResolver resolver) {
+        this.resolver = resolver;
     }
 
     private void parse(final JsonParser parser) throws IllegalDataException {
@@ -279,8 +286,10 @@ public class GeoJSONReader extends AbstractReader {
     private Node createNode(final LatLon latlon) {
         final List<Node> existingNodes = getDataSet().searchNodes(new BBox(latlon, latlon));
         if (!existingNodes.isEmpty()) {
-            // reuse existing node, avoid multiple nodes on top of each other
-            return existingNodes.get(0);
+            if (ColocatedNodesResolver.RESOLVE_KEEP_ONE.equals(this.resolver.resolveColocatedNodes(latlon))) {
+                // reuse existing node
+                return existingNodes.get(0);
+            }
         }
         final Node node = new Node(latlon);
         getDataSet().addPrimitive(node);
@@ -300,7 +309,9 @@ public class GeoJSONReader extends AbstractReader {
         final boolean doAutoclose;
         if (size > 1) {
             if (latlons.get(0).equals(latlons.get(size - 1))) {
-                doAutoclose = false; // already closed
+                // Auto-close to avoid creating a dup final node
+                latlons.remove(size - 1);
+                doAutoclose = true;
             } else {
                 doAutoclose = autoClose;
             }
@@ -464,7 +475,8 @@ public class GeoJSONReader extends AbstractReader {
     }
 
     /**
-     * Parse the given input source and return the dataset.
+     * Parse the given input source and return the dataset, using default
+     * node-colocation resolution rules
      *
      * @param source          the source input stream. Must not be null.
      * @param progressMonitor the progress monitor. If null, {@link NullProgressMonitor#INSTANCE} is assumed
@@ -473,6 +485,21 @@ public class GeoJSONReader extends AbstractReader {
      * @throws IllegalArgumentException if source is null
      */
     public static DataSet parseDataSet(InputStream source, ProgressMonitor progressMonitor) throws IllegalDataException {
-        return new GeoJSONReader().doParseDataSet(source, progressMonitor);
+        return GeoJSONReader.parseDataSet(source, progressMonitor, new ColocatedNodesResolver());
+    }
+
+    /**
+     * Parse the given input source and return the dataset.
+     *
+     * @param source          the source input stream. Must not be null.
+     * @param progressMonitor the progress monitor. If null, {@link NullProgressMonitor#INSTANCE} is assumed
+     * @param resolver        the resolver for determining outcome of nodes colocated in same location
+     * @return the dataset with the parsed data
+     * @throws IllegalDataException     if an error was found while parsing the data from the source
+     * @throws IllegalArgumentException if source is null
+     */
+    public static DataSet parseDataSet(InputStream source, ProgressMonitor progressMonitor, ColocatedNodesResolver resolver)
+            throws IllegalDataException {
+        return new GeoJSONReader(resolver).doParseDataSet(source, progressMonitor);
     }
 }
