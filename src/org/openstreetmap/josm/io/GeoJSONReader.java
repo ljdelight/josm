@@ -42,9 +42,9 @@ import org.openstreetmap.josm.data.projection.Projection;
 import org.openstreetmap.josm.data.projection.Projections;
 import org.openstreetmap.josm.data.validation.TestError;
 import org.openstreetmap.josm.data.validation.tests.DuplicateWay;
+import org.openstreetmap.josm.gui.colocation.DuplicatedNodesResolver;
 import org.openstreetmap.josm.gui.progress.NullProgressMonitor;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
-import org.openstreetmap.josm.gui.colocation.ColocatedNodesResolver;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Utils;
@@ -66,14 +66,14 @@ public class GeoJSONReader extends AbstractReader {
     /** The record separator is 0x1E per RFC 7464 */
     private static final byte RECORD_SEPARATOR_BYTE = 0x1E;
     private Projection projection = Projections.getProjectionByCode("EPSG:4326"); // WGS 84
-    private final ColocatedNodesResolver resolver;
+    private final DuplicatedNodesResolver resolver;
 
     GeoJSONReader() {
         // Restricts visibility
-        this.resolver = new ColocatedNodesResolver();
+        this.resolver = new DuplicatedNodesResolver();
     }
 
-    GeoJSONReader(final ColocatedNodesResolver resolver) {
+    GeoJSONReader(final DuplicatedNodesResolver resolver) {
         this.resolver = resolver;
     }
 
@@ -286,7 +286,7 @@ public class GeoJSONReader extends AbstractReader {
     private Node createNode(final LatLon latlon) {
         final List<Node> existingNodes = getDataSet().searchNodes(new BBox(latlon, latlon));
         if (!existingNodes.isEmpty()) {
-            if (ColocatedNodesResolver.RESOLVE_KEEP_ONE.equals(this.resolver.resolveColocatedNodes(latlon))) {
+            if (DuplicatedNodesResolver.RESOLVE_KEEP_ONE.equals(this.resolver.resolveDuplicatedNodes(latlon))) {
                 // reuse existing node
                 return existingNodes.get(0);
             }
@@ -485,7 +485,7 @@ public class GeoJSONReader extends AbstractReader {
      * @throws IllegalArgumentException if source is null
      */
     public static DataSet parseDataSet(InputStream source, ProgressMonitor progressMonitor) throws IllegalDataException {
-        return GeoJSONReader.parseDataSet(source, progressMonitor, new ColocatedNodesResolver());
+        return GeoJSONReader.parseDataSet(source, progressMonitor, new DuplicatedNodesResolver());
     }
 
     /**
@@ -493,12 +493,12 @@ public class GeoJSONReader extends AbstractReader {
      *
      * @param source          the source input stream. Must not be null.
      * @param progressMonitor the progress monitor. If null, {@link NullProgressMonitor#INSTANCE} is assumed
-     * @param resolver        the resolver for determining outcome of nodes colocated in same location
+     * @param resolver        the resolver for determining outcome of nodes duplicated in same location
      * @return the dataset with the parsed data
      * @throws IllegalDataException     if an error was found while parsing the data from the source
      * @throws IllegalArgumentException if source is null
      */
-    public static DataSet parseDataSet(InputStream source, ProgressMonitor progressMonitor, ColocatedNodesResolver resolver)
+    public static DataSet parseDataSet(InputStream source, ProgressMonitor progressMonitor, DuplicatedNodesResolver resolver)
             throws IllegalDataException {
         return new GeoJSONReader(resolver).doParseDataSet(source, progressMonitor);
     }

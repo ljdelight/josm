@@ -23,11 +23,11 @@ import java.util.Map;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 /**
- * Co-located node resolver is used to detect nodes that are at the same LatLon point during a geojson import.
+ * Duplicated node resolver is used to detect nodes that are at the same LatLon point during a geojson import.
  *
  * @since xxx
  */
-public class ColocatedNodesResolver {
+public class DuplicatedNodesResolver {
     // Resolution choices. Strings are used for easy interoperability with
     // preference storage
     /**
@@ -76,28 +76,28 @@ public class ColocatedNodesResolver {
     private final Map<LatLon, String> locationDecisions;
 
     /**
-     * Constructs a ColocatedNodesResolver with the backward-compatible behavior of
+     * Constructs a {@link DuplicatedNodesResolver} with the backward-compatible behavior of
      * automatically keeping only one node found at a location
      */
-    public ColocatedNodesResolver() {
+    public DuplicatedNodesResolver() {
         this(RESOLVE_KEEP_ONE, APPLY_ALL);
     }
 
-    public ColocatedNodesResolver(final String defaultResolution, final int defaultApplication) {
+    public DuplicatedNodesResolver(final String defaultResolution, final int defaultApplication) {
         this.currentResolution = defaultResolution;
         this.currentApplication = defaultApplication;
         this.locationDecisions = new HashMap<>();
     }
 
     /**
-     * Resolves detected colocation at a specified location, either using a
-     * decision made in past that is to apply to future colocations, or else
+     * Resolves detected duplicated nodes at a specified location, either using a
+     * decision made in past that is to apply to future duplications, or else
      * prompting the user to make a decision
      *
      * @param latlon the location to check for a resolution
      * @return the resolution
      */
-    public String resolveColocatedNodes(final LatLon latlon) {
+    public String resolveDuplicatedNodes(final LatLon latlon) {
         // First, is there a decision specific to this location?
         if (this.locationDecisions.containsKey(latlon)) {
             return this.locationDecisions.get(latlon);
@@ -109,7 +109,7 @@ public class ColocatedNodesResolver {
         }
 
         // Is there a previously saved choice stored in preferences?
-        final String preferenceKey = "import.colocated-nodes.keep";
+        final String preferenceKey = "import.duplicated-nodes.keep";
         final String resolution = Config.getPref().get(preferenceKey, null);
 
         if (RESOLVE_KEEP_ONE.equals(resolution) || RESOLVE_KEEP_ALL.equals(resolution)) {
@@ -143,7 +143,7 @@ public class ColocatedNodesResolver {
     }
 
     /**
-     * Dialog that prompts user to decide how to treat detected colocated nodes
+     * Dialog that prompts user to decide how to treat detected duplicated nodes
      */
     private static class ResolveDialog extends ExtendedDialog {
         private final ButtonGroup applyOptionsGroup;
@@ -166,7 +166,7 @@ public class ColocatedNodesResolver {
                             + "</html>"),
                     BorderLayout.NORTH);
 
-            // Options for applying chosen resolution to future colocated nodes
+            // Options for applying chosen resolution to future duplicated nodes
             JPanel applyOptionsPanel = new JPanel(new FlowLayout());
             JPanel buttonGroupPanel = new JPanel(new FlowLayout());
             this.applyOptionsGroup = new ButtonGroup();
