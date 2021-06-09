@@ -2,6 +2,7 @@
 package org.openstreetmap.josm.gui.colocation;
 
 import org.openstreetmap.josm.data.coor.LatLon;
+import org.openstreetmap.josm.gui.ConditionalOptionPaneUtil;
 import org.openstreetmap.josm.gui.ExtendedDialog;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.util.GuiHelper;
@@ -47,14 +48,14 @@ public class DuplicatedNodesResolver {
     public static final int APPLY_PROMPT = 1;
 
     /**
-     * Resolve detected colocations in chosen manner for all nodes sharing the
+     * Resolve detected duplicate nodes in chosen manner for all nodes sharing the
      * same location as this incident, but prompting user again for new
      * locations
      */
     public static final int APPLY_ALL_AT_LOCATION = 2;
 
     /**
-     * Resolve detected colocations in chosen manner for all further incidents
+     * Resolve detected duplicate nodes in chosen manner for all further incidents
      * and do not prompt user further
      */
     public static final int APPLY_ALL = 3;
@@ -103,7 +104,7 @@ public class DuplicatedNodesResolver {
             return this.locationDecisions.get(latlon);
         }
 
-        // Next, is there a decision to apply to all detected colocations?
+        // Next, is there a decision to apply to all detected duplicate nodes?
         if (this.currentApplication == APPLY_ALL) {
             return this.currentResolution;
         }
@@ -146,15 +147,44 @@ public class DuplicatedNodesResolver {
      * Dialog that prompts user to decide how to treat detected duplicated nodes
      */
     private static class ResolveDialog extends ExtendedDialog {
-        private final ButtonGroup applyOptionsGroup;
-        private final JCheckBox rememberCheckbox;
+        private ButtonGroup applyOptionsGroup;
+        private JCheckBox rememberCheckbox;
 
         ResolveDialog(final LatLon latlon, final int currentApplication) {
             super(MainApplication.getMainFrame(),
-                    tr("Resolve Co-located Nodes"),
+                    tr("Resolve Duplicate Nodes"),
                     tr("Keep One Node (recommended)"), tr("Keep All Nodes"));
 
+            final int answer = ConditionalOptionPaneUtil.showOptionDialog(
+                    "purge",
+                    MainApplication.getMainFrame(),
+                    buildPanel(latlon, currentApplication),
+                    tr("Resolve Duplicate Nodes"),
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    new String[]{tr("YES"), tr("NO"), tr("OTHER")},
+                    tr("OTHER")
+            );
+
             setIcon(JOptionPane.WARNING_MESSAGE);
+            setContent(buildPanel(latlon, currentApplication));
+        }
+
+        public int getApplyToValue() {
+            final ButtonModel selected = this.applyOptionsGroup.getSelection();
+            if (selected != null && "all".equals(selected.getActionCommand())) {
+                return APPLY_ALL;
+            } else {
+                return APPLY_ALL_AT_LOCATION;
+            }
+        }
+
+        public boolean shouldSaveChoice() {
+            // Only allow apply-to-all choices to be saved
+            return this.getApplyToValue() == APPLY_ALL && this.rememberCheckbox.isSelected();
+        }
+
+        private JPanel buildPanel(final LatLon latlon, final int currentApplication) {
             JPanel dialogPanel = new JPanel(new BorderLayout());
             JPanel rememberChoicePanel = new JPanel(new BorderLayout());
             dialogPanel.add(new JLabel("<html>"
@@ -215,21 +245,7 @@ public class DuplicatedNodesResolver {
                 dialogPanel.add(rememberChoicePanel, BorderLayout.SOUTH);
             }
 
-            setContent(dialogPanel);
-        }
-
-        public int getApplyToValue() {
-            final ButtonModel selected = this.applyOptionsGroup.getSelection();
-            if (selected != null && "all".equals(selected.getActionCommand())) {
-                return APPLY_ALL;
-            } else {
-                return APPLY_ALL_AT_LOCATION;
-            }
-        }
-
-        public boolean shouldSaveChoice() {
-            // Only allow apply-to-all choices to be saved
-            return this.getApplyToValue() == APPLY_ALL && this.rememberCheckbox.isSelected();
+            return dialogPanel;
         }
     }
 }
