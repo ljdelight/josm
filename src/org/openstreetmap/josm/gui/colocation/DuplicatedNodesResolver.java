@@ -152,19 +152,45 @@ public class DuplicatedNodesResolver {
 
         ResolveDialog(final LatLon latlon, final int currentApplication) {
             super(MainApplication.getMainFrame(),
-                    tr("Resolve Duplicate Nodes"),
+                    tr("CUSTOM ExtendedDialog - Resolve Duplicate Nodes"),
                     tr("Keep One Node (recommended)"), tr("Keep All Nodes"));
 
+
+
+            ConditionalOptionPaneUtil.startBulkOperation("purge1");
+            final int answer1 = ConditionalOptionPaneUtil.showOptionDialog(
+                    "purge1",
+                    MainApplication.getMainFrame(),
+                    "<html>"
+                            + tr("The imported geojson contains multiple nodes positioned at ")
+                            + latlon.toDisplayString()
+                            + ".<br/>"
+                            + "Nodes with the same location "
+                            + tr("How would you like to proceed when nodes have the same lat,lon?")
+                            + "<br/><br/>"
+                            + "</html>",
+                    //buildPanel(latlon, currentApplication),
+                    tr("ConditionalOptionPaneUtil NEW Resolve Duplicate Nodes"),
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    new String[]{tr("Merge Duplicates as One Node (recommended)"), tr("Preserve Duplicate Node"), tr("Cancel")},
+                    tr("OTHER")
+            );
+            ConditionalOptionPaneUtil.endBulkOperation("purge1");
+
+            ConditionalOptionPaneUtil.startBulkOperation("purge");
             final int answer = ConditionalOptionPaneUtil.showOptionDialog(
                     "purge",
                     MainApplication.getMainFrame(),
                     buildPanel(latlon, currentApplication),
-                    tr("Resolve Duplicate Nodes"),
+                    tr("ConditionalOptionPaneUtil OLD Resolve Duplicate Nodes"),
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE,
                     new String[]{tr("YES"), tr("NO"), tr("OTHER")},
                     tr("OTHER")
             );
+            ConditionalOptionPaneUtil.endBulkOperation("purge");
+
 
             setIcon(JOptionPane.WARNING_MESSAGE);
             setContent(buildPanel(latlon, currentApplication));
@@ -241,6 +267,67 @@ public class DuplicatedNodesResolver {
             // wants per-location option
             this.rememberCheckbox = new JCheckBox(tr("Don''t ask me again"));
             rememberChoicePanel.add(this.rememberCheckbox, BorderLayout.SOUTH);
+            if (currentApplication != APPLY_ALL_AT_LOCATION) {
+                dialogPanel.add(rememberChoicePanel, BorderLayout.SOUTH);
+            }
+
+            return dialogPanel;
+        }
+
+
+        private JPanel buildPanelNoThisThatLogic(final LatLon latlon, final int currentApplication) {
+            JPanel dialogPanel = new JPanel(new BorderLayout());
+            JPanel rememberChoicePanel = new JPanel(new BorderLayout());
+            dialogPanel.add(new JLabel("<html>"
+                            + tr("Import contains multiple nodes positioned at ")
+                            + latlon.toDisplayString()
+                            + ".<br/>"
+                            + tr("How would you like to proceed with these nodes?")
+                            + "<br/><br/>"
+                            + "</html>"),
+                    BorderLayout.NORTH);
+
+            // Options for applying chosen resolution to future duplicated nodes
+            JPanel applyOptionsPanel = new JPanel(new FlowLayout());
+            JPanel buttonGroupPanel = new JPanel(new FlowLayout());
+            this.applyOptionsGroup = new ButtonGroup();
+
+            JRadioButton locationOption = new JRadioButton(tr("This location"));
+            locationOption.setActionCommand("location");
+            this.applyOptionsGroup.add(locationOption);
+            locationOption.setSelected(currentApplication == APPLY_ALL_AT_LOCATION);
+            buttonGroupPanel.add(locationOption);
+
+            JRadioButton allOption = new JRadioButton(tr("All locations"));
+            allOption.setActionCommand("all");
+            this.applyOptionsGroup.add(allOption);
+            allOption.setSelected(currentApplication != APPLY_ALL_AT_LOCATION);
+
+            // Listen for changes to the applies-to-all radio button, as we
+            // only want to offer the option to remember choice if the choice
+            // is being applied to all nodes rather than a single location, as
+            // we naturally have to prompt for each new location if user wants
+            // per-location option
+            allOption.addChangeListener((ChangeEvent e) -> {
+                if (allOption.isSelected()) {
+                    if (!dialogPanel.isAncestorOf(rememberChoicePanel)) {
+                        dialogPanel.add(rememberChoicePanel, BorderLayout.SOUTH);
+                    }
+                } else {
+                    dialogPanel.remove(rememberChoicePanel);
+                }
+
+                this.revalidate();
+                this.pack();
+                this.repaint();
+            });
+            buttonGroupPanel.add(allOption);
+
+            applyOptionsPanel.add(new JLabel(tr("Apply this choice to:")));
+            applyOptionsPanel.add(buttonGroupPanel);
+            dialogPanel.add(applyOptionsPanel, BorderLayout.CENTER);
+
+
             if (currentApplication != APPLY_ALL_AT_LOCATION) {
                 dialogPanel.add(rememberChoicePanel, BorderLayout.SOUTH);
             }
