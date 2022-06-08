@@ -76,7 +76,7 @@ public class GeoJSONReader extends AbstractReader {
      */
     private static final String CRS_GEOJSON = "EPSG:4326";
     private Projection projection = Projections.getProjectionByCode(CRS_GEOJSON); // WGS 84
-    private final ColocatedNodesResolver resolver;
+    private final DuplicatedNodesResolver resolver;
 
     GeoJSONReader() {
         // Restricts visibility
